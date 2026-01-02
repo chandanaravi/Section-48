@@ -44,7 +44,7 @@ class DataTransformation:
             ])
 
             # COMBINE PIPELINES
-            preprocessor = ColumnTransformer(
+            preprocessor = ColumnTransformer(remainder='passthrough',
                 transformers=[
                     ('num', num_pipeline, numerical_cols),
                     ('cat', cat_pipeline, categorical_cols)
@@ -60,8 +60,16 @@ class DataTransformation:
 
         try:
             
-            categorical_cols, numerical_cols = self.data_ingestion.get_feature_columns(target_column="target")
+            if self.data_ingestion is None:
+                logger.info("data ingestion object not available.")
+                raise Exception("data ingestion not available.")
+            
+
             target_column_name='math_score'
+            
+            categorical_cols, numerical_cols = self.data_ingestion.get_feature_columns(target_column_name)
+            
+            
             train_data_path = self.data_ingestion.train_data_file_path
             test_data_path = self.data_ingestion.test_data_file_path
             logger.info("Loading training and testing data for transformation.")
