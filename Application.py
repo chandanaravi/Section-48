@@ -11,6 +11,7 @@ from src.components.CSV_DataIngestion import CSV_DataIngestion
 from src.components.DataTransformation import DataTransformation
 
 from src.components.ModelTrainer import ModelTrainer_LinearRegression
+from src.components.ModelTrainer_RandomForest import ModelTrainer_RandomForest
 
 load_dotenv()
 
@@ -42,10 +43,22 @@ class App:
 
         dt=DataTransformation(data_ingestion=di,target_column_name="math_score")
         final_train_data,final_test_data,preprocesser_pkl_lile=dt.initiate_data_transformation()
+        
         X_train, y_train = final_train_data[:,:-1], final_train_data[:,-1]
+        X_test,y_test=final_test_data[:,:-1],final_test_data[:,-1]
+
 
         model=ModelTrainer_LinearRegression()
         model.TrainModel_and_Save(X_train=X_train,y_train=y_train)
+        r2_score=model.Evaluate_Model(X_test,y_test)
+        print(f"1.Linear Regression Model R2 SCORE IS : {r2_score}")
+
+        model=ModelTrainer_RandomForest()
+        model.TrainModel_and_Save(X_train=X_train,y_train=y_train)
+        r2_score=model.Evaluate_Model(X_test,y_test)
+        print(f"2.Random Forest Model R2 SCORE IS : {r2_score}")
+
+
         logger.info("==================== Application finished ====================")
         
 

@@ -41,7 +41,7 @@ def setup_logger() -> logging.Logger:
 
     # Add the handlers to the logger
     logger.addHandler(fh)
-    logger.addHandler(ch)
+    #logger.addHandler(ch)
 
     return logger
 

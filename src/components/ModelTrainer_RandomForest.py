@@ -51,3 +51,12 @@ class ModelTrainer_RandomForest:
         self.model=model
         save_object(self.model_obj_file_path,model)
         
+    def Evaluate_Model(self,X_test,y_test):
+        try:
+            y_predict=self.model.predict(X_test)
+            score=r2_score(y_test,y_predict)
+            logger.info(f"Linear Regression Model r2 score is {score}")
+            return score
+        except Exception as e:
+            logger.error(e)
+        
