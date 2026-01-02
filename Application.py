@@ -36,21 +36,16 @@ class App:
     def Run2(self):
 
         logger.info("==================== Application started ====================")
-
         file_path=os.getcwd()+"/DataSets/stud.csv"
-
         di=CSV_DataIngestion(file_path=file_path)
-        #math_score
         di.Load()
-        
+
         dt=DataTransformation(data_ingestion=di,target_column_name="math_score")
         final_train_data,final_test_data,preprocesser_pkl_lile=dt.initiate_data_transformation()
-        
-        model=ModelTrainer_LinearRegression()
-
         X_train, y_train = final_train_data[:,:-1], final_train_data[:,-1]
-        model.TrainModel_and_Save(X_train=X_train,y_train=y_train)
 
+        model=ModelTrainer_LinearRegression()
+        model.TrainModel_and_Save(X_train=X_train,y_train=y_train)
         logger.info("==================== Application finished ====================")
         
 
