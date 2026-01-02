@@ -9,6 +9,9 @@ from src.applogger import logger
 
 from src.components.CSV_DataIngestion import CSV_DataIngestion
 from src.components.DataTransformation import DataTransformation
+
+from src.components.ModelTrainer import ModelTrainer_LinearRegression
+
 load_dotenv()
 
 
@@ -42,12 +45,18 @@ class App:
         
         dt=DataTransformation(data_ingestion=di,target_column_name="math_score")
         final_train_data,final_test_data,preprocesser_pkl_lile=dt.initiate_data_transformation()
-        print(preprocesser_pkl_lile)
+        
+        model=ModelTrainer_LinearRegression()
+
+        X_train, y_train = final_train_data[:,:-1], final_train_data[:,-1]
+        model.TrainModel_and_Save(X_train=X_train,y_train=y_train)
+
         logger.info("==================== Application finished ====================")
         
 
 if __name__ == "__main__":
     app=App()
     app.Run2()
+     
     
    
