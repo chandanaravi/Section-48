@@ -8,91 +8,99 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
-
-
 from src.applogger import logger
 from src.components.DataIngestion import DataIngestion
 from src.helper import save_object
+from src.components.CSV_DataIngestion import CSV_DataIngestion
+from pathlib import Path
+import datetime
+
 
 class DataTransformation:
-    def __init__(self,data_ingestion: DataIngestion):
+
+    def __init__(self,data_ingestion: CSV_DataIngestion,target_column_name:str):
         self.data_ingestion = data_ingestion
-        self.processed_train_data = None
-        self.processed_test_data = None
+        self.target_column_name=target_column_name
+        logger.info("=== Initializing DataTransformation object ===")
+        if data_ingestion is None:
+            file_path=os.getcwd()+"/DataSets/stud.csv"
+            self.data_ingestion=CSV_DataIngestion(file_path,isLoad=True,target_column_name=target_column_name)
 
-    # PREPROCESSING STEPS CAN BE ADDED HERE
-    def get_data_transformation_object(self):
+        if self.data_ingestion.isDataLoad==False:
+            self.data_ingestion.Load(self.target_column_name)
+
+        data_dir_path=os.getcwd() + "/artifacts"
+        directory_path=Path(data_dir_path)
+        directory_path.mkdir(parents=True, exist_ok=True)
+        
+        current_datetime = datetime.datetime.now()
+        filename_str ="preprocesser_obj_" + current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+        file_name = f"{filename_str}.pkl"
+
+        self.preprocessor_obj_file_path=f"{data_dir_path}/{file_name}"
+
+    def initiate_data_transformation(self):
+
+        logger.info("Creating data transformation pipelines")
         try:
-            logger.info("Starting data transformation process.")
-            #categorical_cols, numerical_cols = self.data_ingestion.getcolumns()
-            categorical_cols, numerical_cols = self.data_ingestion.get_feature_columns(target_column="target")
-            logger.info(f"Categorical columns: {categorical_cols}")
-            logger.info(f"Numerical columns: {numerical_cols}")
-            # Further transformation logic can be added here
+            preprocessor_obj = self._get_data_transformation_object(self.target_column_name)
 
-            # NUMARICAL PIPELINE
+            train_data=self.data_ingestion.get_train_data()
+            
+            test_data=self.data_ingestion.get_test_data()
+
+            input_feature_train_arr = preprocessor_obj.fit_transform(train_data) # input_feature_train_data)
+            
+            input_feature_test_arr = preprocessor_obj.transform(test_data) # input_feature_test_data)
+
+            save_object(self.preprocessor_obj_file_path,preprocessor_obj)
+
+            return (input_feature_train_arr,input_feature_test_arr,self.preprocessor_obj_file_path)
+            
+        except Exception as e:
+            logger.error(f"Error in creating data transformation object: {e}")
+            raise e
+
+    def _get_data_transformation_object(self,target_column_name:str=""):
+
+        try:
+            if target_column_name.strip()!="":
+                self.target_column_name=target_column_name
+            
+            if self.data_ingestion.isDataLoad==False:
+                self.data_ingestion.Load(target_column_name=target_column_name)
+            
+            categorical_columns,numerical_columns=self.data_ingestion.get_feature_columns_except_target_column(self.target_column_name)
+            
             num_pipeline = Pipeline(steps=[
                 ('imputer', SimpleImputer(strategy='median')),
                 ('scaler', StandardScaler())
             ])
 
-            # CATEGORICAL PIPELINE
+            # Categorical pipeline
             cat_pipeline = Pipeline(steps=[
                 ('imputer', SimpleImputer(strategy='most_frequent')),
-                ('onehot', OneHotEncoder(handle_unknown='ignore')),
-                ('scaler', StandardScaler(with_mean=False)) 
+                ('one_hot_encoder', OneHotEncoder()),
+                ('scaler', StandardScaler(with_mean=False))
             ])
 
-            # COMBINE PIPELINES
-            preprocessor = ColumnTransformer(remainder='passthrough',
-                transformers=[
-                    ('num', num_pipeline, numerical_cols),
-                    ('cat', cat_pipeline, categorical_cols)
-                ]
-            )
-            logger.info("Data transformation process completed successfully.")
+            # Combine pipelines
+            preprocessor = ColumnTransformer(remainder='passthrough', transformers=[
+                ('num_pipeline', num_pipeline, numerical_columns),
+                ('cat_pipeline', cat_pipeline, categorical_columns)
+            ])
+
+            logger.info("Data transformation pipelines created successfully")
             return preprocessor
+
+
         except Exception as e:
-            logger.error(f"An error occurred in data transformation: {e}")
-            raise Exception(f"An error occurred in data transformation: {e}")
+            logger.error(e)
     
-    def initiate_data_transformation(self):
+    
 
-        try:
-            
-            if self.data_ingestion is None:
-                logger.info("data ingestion object not available.")
-                raise Exception("data ingestion not available.")
-            
+        
 
-            target_column_name='math_score'
-            
-            categorical_cols, numerical_cols = self.data_ingestion.get_feature_columns(target_column_name)
-            
-            
-            train_data_path = self.data_ingestion.train_data_file_path
-            test_data_path = self.data_ingestion.test_data_file_path
-            logger.info("Loading training and testing data for transformation.")
-            train_data = pd.read_csv(train_data_path)
-            test_data = pd.read_csv(test_data_path)
-            
-            preprocessor = self.get_data_transformation_object()
 
-            #preprocessor.fit_transform(train_data.drop(columns=[target_column_name]))
-            self.processed_train_data = preprocessor.fit_transform(train_data)
-            logger.info("Data transformation object fitted on training data.")  
-            #preprocessor.transform(test_data.drop(columns=[target_column_name]))
-            self.processed_test_data = preprocessor.transform(test_data)
-            logger.info("Data transformation object applied to testing data.")
-            
-            CURRENT_DIR = current_directory = os.getcwd() + "/artifacts"
-            os.makedirs(CURRENT_DIR, exist_ok=True)
-            processed_train_data_path = os.path.join(CURRENT_DIR, "preprocesser.pkl")
-            save_object(file_path=processed_train_data_path, obj=preprocessor)
-            logger.info(f"Preprocessor object saved at {processed_train_data_path}")
 
-            return (self.processed_train_data, self.processed_test_data, processed_train_data_path)
-
-        except Exception as e:
-            logger.error(f"An error occurred while initiating data transformation: {e}")
-            raise Exception(f"An error occurred while initiating data transformation: {e}")
+        

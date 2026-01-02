@@ -5,52 +5,6 @@ from src.applogger import logger
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-class CSV_DataIngestion:
-
-    def __init__(self,file_path:str=None,data_dir_path:str=None,isLoad:bool=True):
-
-        # VARIABLES
-        self.data:pd.DataFrame=None
-        self.file_path=file_path
-        self.data_dir_path=data_dir_path
-
-        self.raw_data_file_path:str="raw_data.csv"
-        self.train_data_file_path="train_data.csv"
-        self.test_data_file_path="test_data.csv"
-
-        if isLoad==True and file_path is None:
-            logger.error("Data file path should be required.")
-            raise Exception("Data file path should be required.")
-
-        # data directory created if not exists
-        if data_dir_path is not None:
-            directory_path=Path(data_dir_path)
-            directory_path.mkdir(parents=True, exist_ok=True)
-        
-        if data_dir_path is None:
-            self.data_dir_path=os.getcwd() + "/artifacts"
-            directory_path=Path(data_dir_path)
-            directory_path.mkdir(parents=True, exist_ok=True)
-
-        if isLoad==True and file_path is not None:
-            self.data=pd.read_csv(file_path)
-    
-    def Load(self,file_path:str):
-        if file_path is None:
-            logger.error("data file path should be required.")
-            raise Exception("data file path should be required.")
-        self.data=pd.read_csv(file_path)
-        train_data, test_data = train_test_split(self.data, test_size=0.2, random_state=42)
-
-        return(train_data,test_data)
-
-
-
-
-
-
-
-
     
     
 
